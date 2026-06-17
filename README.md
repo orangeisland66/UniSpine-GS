@@ -40,10 +40,17 @@ views are merged into the training cameras and no test metric is reported.
 Create the UniSpine-GS training environment from the project root:
 
 ```bash
-git clone https://github.com/orangeisland66/UniSpine-GS.git
+git clone --recursive https://github.com/orangeisland66/UniSpine-GS.git
 cd UniSpine-GS
 conda env create --file environment.yml
 conda activate unispine_gs
+```
+
+If you cloned the repository without `--recursive`, initialize all nested
+submodules before installing the CUDA extensions:
+
+```bash
+git submodule update --init --recursive
 ```
 
 Verify that PyTorch imports correctly before building the local CUDA extensions:
@@ -51,6 +58,38 @@ Verify that PyTorch imports correctly before building the local CUDA extensions:
 ```bash
 python -c "import torch; print(torch.__version__, torch.version.cuda)"
 ```
+
+The local CUDA extension modules are compiled with `nvcc` and CUDA development
+headers.  The CUDA compiler version must match the CUDA version used by PyTorch.
+`environment.yml` installs `cuda-nvcc=11.6`, `cuda-cudart=11.6`, and
+`cuda-cudart-dev=11.6` for this purpose.  It also installs
+`libcurand-dev=10.2.9.55`, which TIGRE needs for `curand_kernel.h`.  After
+activating the environment, verify that the environment-provided compiler is
+selected:
+
+```bash
+which nvcc
+nvcc --version
+```
+
+The reported CUDA release should be `11.6`.  If it reports a different system
+CUDA version, reactivate the conda environment or place `$CONDA_PREFIX/bin`
+before the system CUDA path in `PATH`.
+
+TIGRE source is vendored in `third_party/TIGRE-2.3` under the BSD 3-Clause
+license.  Build it from the repository copy before running the CT conversion
+scripts:
+
+```bash
+cd third_party/TIGRE-2.3/Python
+CUDA_HOME="$CONDA_PREFIX" python setup.py develop
+cd ../../..
+python -c "import tigre; print('TIGRE OK')"
+```
+
+Setting `CUDA_HOME="$CONDA_PREFIX"` makes TIGRE use the CUDA compiler and
+runtime libraries installed in the conda environment instead of a system CUDA
+installation.
 
 Then install the two in-repository extension modules:
 
@@ -78,14 +117,9 @@ The local training helper `train.sh` assumes this environment has already been
 activated and uses the `python` executable from the current shell.
 
 The NIfTI-to-pickle conversion script is included in this repository under
-`tools/`.  It uses the SAX-NeRF data generation convention.  The Python
-dependencies used by the converter (`nibabel`, `scipy`, `PyYAML`, and
-`imageio`) are included in `environment.yml`; install TIGRE separately and
-verify that it is importable:
-
-```bash
-python -c "import tigre; print('TIGRE OK')"
-```
+`tools/`.  It uses the SAX-NeRF data generation convention and the vendored
+TIGRE build above.  The Python dependencies used by the converter (`nibabel`,
+`scipy`, `PyYAML`, and `imageio`) are included in `environment.yml`.
 
 ## 3. Prepare CTSpine1K Data
 

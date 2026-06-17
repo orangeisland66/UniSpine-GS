@@ -10,3 +10,8 @@ data
 config/logs
 config/cache
 __pycache__/
+third_party/TIGRE-2.3/Python/*.so
+third_party/TIGRE-2.3/Python/build/
+third_party/TIGRE-2.3/Python/dist/
+third_party/TIGRE-2.3/Python/*.egg-info/
+third_party/TIGRE-2.3/Python/.eggs/

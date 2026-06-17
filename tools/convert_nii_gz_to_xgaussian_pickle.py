@@ -13,6 +13,8 @@ import yaml
 
 
 DEFAULT_CONFIG = Path(__file__).resolve().parent / "configs" / "ctspine1k_spine.yaml"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+VENDORED_TIGRE_PYTHON = PROJECT_ROOT / "third_party" / "TIGRE-2.3" / "Python"
 
 
 def import_tigre():
@@ -20,10 +22,18 @@ def import_tigre():
         import tigre  # type: ignore
         from tigre.utilities.geometry import Geometry  # type: ignore
     except Exception as exc:
-        raise RuntimeError(
-            "Cannot import TIGRE. Install TIGRE and make sure "
-            "`python -c 'import tigre'` works before running conversion."
-        ) from exc
+        fallback = str(VENDORED_TIGRE_PYTHON)
+        if VENDORED_TIGRE_PYTHON.exists() and fallback not in sys.path:
+            sys.path.insert(0, fallback)
+        try:
+            import tigre  # type: ignore
+            from tigre.utilities.geometry import Geometry  # type: ignore
+        except Exception as fallback_exc:
+            raise RuntimeError(
+                "Cannot import TIGRE. Build the vendored TIGRE source from "
+                "`third_party/TIGRE-2.3/Python` and verify that "
+                "`python -c 'import tigre'` works before running conversion."
+            ) from fallback_exc
     return tigre, Geometry
 
 

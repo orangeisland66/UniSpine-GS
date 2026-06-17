@@ -15,6 +15,11 @@ import scipy.ndimage as ndi
 import yaml
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONFIG = PROJECT_ROOT / "tools" / "configs" / "ctspine1k_spine.yaml"
+VENDORED_TIGRE_PYTHON = PROJECT_ROOT / "third_party" / "TIGRE-2.3" / "Python"
+
+
 def _setup_logger(verbose: bool) -> logging.Logger:
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
@@ -31,16 +36,16 @@ def _import_tigre_or_fail(logger: logging.Logger):
         from tigre.utilities.geometry import Geometry  # type: ignore
         return tigre, Geometry
     except Exception:
-        fallback = "/data1/sunchao/CQH/SAX-NeRF/TIGRE-2.3/Python"
-        if fallback not in sys.path:
-            sys.path.insert(0, fallback)
+        fallback_str = str(VENDORED_TIGRE_PYTHON)
+        if VENDORED_TIGRE_PYTHON.exists() and fallback_str not in sys.path:
+            sys.path.insert(0, fallback_str)
         try:
             import tigre  # type: ignore
             from tigre.utilities.geometry import Geometry  # type: ignore
-            logger.info("Using TIGRE from fallback path: %s", fallback)
+            logger.info("Using TIGRE from fallback path: %s", fallback_str)
             return tigre, Geometry
         except Exception as e:
-            logger.error("Cannot import TIGRE. Install tigre or set PYTHONPATH correctly.")
+            logger.error("Cannot import TIGRE. Install the vendored TIGRE package from third_party/TIGRE-2.3/Python.")
             raise RuntimeError(f"TIGRE import failed: {e}")
 
 
@@ -379,10 +384,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Convert .vol to UniSpine/X-Gaussian compatible pickle")
     parser.add_argument("--input_vol", required=True)
     parser.add_argument("--output_pickle", required=True)
-    parser.add_argument("--config", default="/data1/sunchao/CQH/SAX-NeRF/dataGenerator/raw_data/spine/config.yml")
+    parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--vis_dir", required=True)
-    parser.add_argument("--ref_pickle", default="/data1/sunchao/CQH/UniSpine-GS/data/1.3.6.1.4.1.9328.50.4.0737.pickle")
-    parser.add_argument("--ref_vis_dir", default="/data1/sunchao/CQH/UniSpine-GS/data/visualization/IMG_20251125_1")
+    parser.add_argument("--ref_pickle", default=None, help="Optional reference pickle used for schema comparison.")
+    parser.add_argument("--ref_vis_dir", default=None, help="Optional reference visualization directory for sanity comparison.")
     parser.add_argument("--n_train", type=int, default=50)
     parser.add_argument("--n_val", type=int, default=50)
     parser.add_argument("--n_test", type=int, default=50)
@@ -399,6 +404,13 @@ def main() -> int:
 
     np.random.seed(args.seed)
 
+    input_vol_path = Path(args.input_vol).expanduser().resolve()
+    output_pickle_path = Path(args.output_pickle).expanduser().resolve()
+    config_path = Path(args.config).expanduser().resolve()
+    vis_dir_path = Path(args.vis_dir).expanduser().resolve()
+    ref_pickle_path = Path(args.ref_pickle).expanduser().resolve() if args.ref_pickle else None
+    ref_vis_dir_path = Path(args.ref_vis_dir).expanduser().resolve() if args.ref_vis_dir else None
+
     if args.vol_shape_xyz is not None:
         parts = [int(x.strip()) for x in args.vol_shape_xyz.split(",")]
         if len(parts) != 3:
@@ -408,16 +420,19 @@ def main() -> int:
     else:
         vol_shape_xyz = None
 
-    if not os.path.isabs(args.input_vol) or not os.path.isabs(args.output_pickle) or not os.path.isabs(args.vis_dir):
-        logger.error("All major paths must be absolute: --input_vol --output_pickle --vis_dir")
-        return 2
+    if not input_vol_path.exists():
+        raise FileNotFoundError(f"Input .vol not found: {input_vol_path}")
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config YAML not found: {config_path}")
+    if ref_pickle_path is not None and not ref_pickle_path.exists():
+        raise FileNotFoundError(f"Reference pickle not found: {ref_pickle_path}")
 
     tigre, Geometry = _import_tigre_or_fail(logger)
 
-    cfg = yaml.safe_load(Path(args.config).read_text())
+    cfg = yaml.safe_load(config_path.read_text())
 
     vol_xyz_raw, parse_meta = parse_vol(
-        args.input_vol,
+        str(input_vol_path),
         vol_shape_xyz=vol_shape_xyz,
         vol_dtype=args.vol_dtype,
         vol_offset=args.vol_offset,
@@ -491,27 +506,32 @@ def main() -> int:
                     len(set(np.round(out_data['train']['angles'], 10)).intersection(set(np.round(out_data['test']['angles'], 10)))) == 0 and
                     len(set(np.round(out_data['val']['angles'], 10)).intersection(set(np.round(out_data['test']['angles'], 10)))) == 0)
 
-    out_path = Path(args.output_pickle)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("wb") as f:
+    output_pickle_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_pickle_path.open("wb") as f:
         pickle.dump(out_data, f, protocol=4)
-    logger.info("Saved pickle: %s", str(out_path))
+    logger.info("Saved pickle: %s", str(output_pickle_path))
 
-    _visualize(Path(args.vis_dir), out_data, Path(args.ref_vis_dir), logger)
+    _visualize(vis_dir_path, out_data, ref_vis_dir_path, logger)
 
-    ok = validate_pickle_schema(args.ref_pickle, str(out_path), logger)
+    if ref_pickle_path is not None:
+        ok = validate_pickle_schema(str(ref_pickle_path), str(output_pickle_path), logger)
+    else:
+        logger.info("Schema validation skipped: --ref_pickle was not provided.")
+        ok = True
 
     # Dataloader compatibility smoke test
     if not args.skip_loader_check:
         try:
-            sys.path.insert(0, "/data1/sunchao/CQH/UniSpine-GS")
+            project_root = str(PROJECT_ROOT)
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
             from scene.dataset_readers import Xray_readCamerasFromTransforms
-            _ = Xray_readCamerasFromTransforms(str(out_path), type="train")
-            _ = Xray_readCamerasFromTransforms(str(out_path), type="val")
+            _ = Xray_readCamerasFromTransforms(str(output_pickle_path), type="train")
+            _ = Xray_readCamerasFromTransforms(str(output_pickle_path), type="val")
             logger.info("Dataloader compatibility smoke test: PASSED")
         except Exception as e:
             logger.warning("Dataloader compatibility smoke test: SKIPPED/FAILED in current env | %s", e)
-            logger.warning("Suggestion: run this check inside UniSpine_GS env where project dependencies are installed.")
+            logger.warning("Suggestion: run this check inside the unispine_gs env where project dependencies are installed.")
 
     return 0 if ok else 4
 
