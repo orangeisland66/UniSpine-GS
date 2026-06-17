@@ -37,20 +37,14 @@ views are merged into the training cameras and no test metric is reported.
 
 ## 2. Environment
 
-Create the UniSpine-GS training environment from the project root:
+Create the UniSpine-GS training environment from a fresh clone:
 
 ```bash
-git clone --recursive https://github.com/orangeisland66/UniSpine-GS.git
+git clone https://github.com/orangeisland66/UniSpine-GS.git
 cd UniSpine-GS
+git submodule update --init --recursive submodules/diff-gaussian-rasterization/third_party/glm
 conda env create --file environment.yml
 conda activate unispine_gs
-```
-
-If you cloned the repository without `--recursive`, initialize all nested
-submodules before installing the CUDA extensions:
-
-```bash
-git submodule update --init --recursive
 ```
 
 Verify that PyTorch imports correctly before building the local CUDA extensions:
@@ -98,28 +92,9 @@ pip install submodules/diff-gaussian-rasterization
 pip install submodules/simple-knn
 ```
 
-These extensions are intentionally installed after `conda env create` rather
-than from the `pip:` section of `environment.yml`. Their setup scripts import
-PyTorch while building, so installing them after the environment is activated
-makes failures easier to diagnose and avoids creating a partially configured
-environment.
+These extensions are installed after `conda env create` because their setup
+scripts import PyTorch during compilation.
 
-If environment creation previously failed while installing these submodules,
-remove the incomplete environment and recreate it:
-
-```bash
-conda env remove -n unispine_gs
-conda env create --file environment.yml
-conda activate unispine_gs
-```
-
-The local training helper `train.sh` assumes this environment has already been
-activated and uses the `python` executable from the current shell.
-
-The NIfTI-to-pickle conversion script is included in this repository under
-`tools/`.  It uses the SAX-NeRF data generation convention and the vendored
-TIGRE build above.  The Python dependencies used by the converter (`nibabel`,
-`scipy`, `PyYAML`, and `imageio`) are included in `environment.yml`.
 
 ## 3. Prepare CTSpine1K Data
 
