@@ -5,30 +5,33 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  # CUDA toolchain used to compile the local CUDA extensions.
   - cudatoolkit=11.6
   - cuda-nvcc=11.6
   - cuda-cudart=11.6
   - cuda-cudart-dev=11.6
   - cuda-cccl=11.6
+
   - libcurand=10.2.9.55
   - libcurand-dev=10.2.9.55
-  # PyTorch 1.12.x can fail to import with newer MKL releases:
-  # undefined symbol: iJIT_NotifyEvent
+
   - mkl=2024.0.0
+
   - plyfile=0.8.1
-  - python=3.7.13
+  - python=3.7.12
   - pip=22.3.1
-  - ninja
+  - ninja=1.13.2
   - cython=0.29.25
   - numpy=1.21.6
-  - matplotlib
+  - scipy=1.7.3
+  - pillow=9.4.0
+  - matplotlib=3.5.3
   - pytorch=1.12.1
   - torchaudio=0.12.1
   - torchvision=0.13.1
-  - tqdm
-  - imageio
-  - pyyaml
-  - scipy
+  - tqdm=4.67.1
+  - imageio=2.36.0
+  - pyyaml=6.0
   - pip:
-    - opencv-python
-    - nibabel<5
+    - opencv-python==4.13.0.92
+    - nibabel==4.0.2

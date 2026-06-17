@@ -49,7 +49,7 @@ class GaussianModel_Xray:
         self.spatial_lr_scale = 0
         self.setup_functions()              
 
-    # 返回一个元组
+    # Return a tuple.
     def capture(self):
         return (
             self.active_sh_degree,          
@@ -144,7 +144,7 @@ class GaussianModel_Xray:
         self._scaling = nn.Parameter(scales.requires_grad_(True))               # [num_points, 3]
         self._rotation = nn.Parameter(rots.requires_grad_(True))                # [num_points, 4]
         self._opacity = nn.Parameter(opacities.requires_grad_(True))            # [num_points, 1]
-        self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")  # [num_points], 点云拍在二维平面上的最大半径
+        self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")  # [num_points], max screen-space radius
         
 
 

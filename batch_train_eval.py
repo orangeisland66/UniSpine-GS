@@ -40,7 +40,7 @@ def parse_log_metrics(log_path: Path):
         line = raw_line.strip()
 
         if "Evaluating test: SSIM" in line and "PSNR" in line:
-            # 兼容格式: SSIM = tensor(0.95, device='cuda:0'), PSNR = tensor(32.1, ...)
+            # Support formats such as: SSIM = tensor(0.95, device='cuda:0'), PSNR = tensor(32.1, ...)
             ssim_part = line.split("SSIM =", 1)[1].split(", PSNR", 1)[0]
             psnr_part = line.split("PSNR =", 1)[1]
             cur_ssim = extract_first_float(ssim_part)
@@ -77,7 +77,7 @@ def maybe_make_config(config_path: Path, scene_name: str, pickle_path: Path):
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_content = CONFIG_TEMPLATE.format(scene=scene_name, source_path=pickle_path.as_posix())
     config_path.write_text(config_content, encoding="utf-8")
-    print(f"[Info] 自动创建配置: {config_path}")
+    print(f"[Info] Created config automatically: {config_path}")
     return config_path
 
 
@@ -121,7 +121,7 @@ def write_metrics_csv(csv_path: Path, results, avg):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="批量训练并评估 data 一级目录下全部 pickle")
+    parser = argparse.ArgumentParser(description="Batch train and evaluate all top-level pickle files in data.")
     parser.add_argument("--project_root", type=str, default=".")
     parser.add_argument("--data_dir", type=str, default="data")
     parser.add_argument("--config_dir", type=str, default="config")
@@ -138,11 +138,11 @@ def main():
     pickle_files = sorted([p for p in data_dir.glob("*.pickle") if p.is_file()])
 
     if not pickle_files:
-        print(f"[Error] 未找到 pickle 文件: {data_dir}")
+        print(f"[Error] No pickle files found: {data_dir}")
         return 1
 
     print("=" * 70)
-    print(f"共发现 {len(pickle_files)} 个 pickle 文件")
+    print(f"Found {len(pickle_files)} pickle files")
     for p in pickle_files:
         print(f"  - {p.name}")
     print("=" * 70)
@@ -156,13 +156,13 @@ def main():
         model_path = output_root / scene_name
 
         print("\n" + "-" * 70)
-        print(f"[{idx}/{len(pickle_files)}] 开始: {scene_name}")
+        print(f"[{idx}/{len(pickle_files)}] Starting: {scene_name}")
         print(f"config: {config_path}")
         print(f"model : {model_path}")
         print("-" * 70)
 
         if model_path.exists():
-            print(f"[Info] 删除旧输出目录: {model_path}")
+            print(f"[Info] Removing existing output directory: {model_path}")
             import shutil
             shutil.rmtree(model_path)
 
@@ -183,7 +183,7 @@ def main():
         elapsed = time.time() - start_time
 
         if ret.returncode != 0:
-            print(f"[Error] 训练失败: {scene_name}")
+            print(f"[Error] Training failed: {scene_name}")
             failed.append(scene_name)
             continue
 
@@ -265,9 +265,9 @@ def main():
     summary_txt.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     print("\n" + "\n".join(lines))
-    print(f"[Info] 详细结果(JSON): {summary_json}")
-    print(f"[Info] 文字摘要(TXT): {summary_txt}")
-    print(f"[Info] 表格结果(CSV): {summary_csv}")
+    print(f"[Info] Detailed results (JSON): {summary_json}")
+    print(f"[Info] Text summary (TXT): {summary_txt}")
+    print(f"[Info] Table results (CSV): {summary_csv}")
 
     return 0
 

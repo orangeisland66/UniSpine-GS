@@ -15,4 +15,4 @@ def scan_4dv(root_dir):
                     print(f"Found match (128x128): {path}, Size: {size}, Z: {z}")
 
 if __name__ == "__main__":
-    scan_4dv('/data1/sunchao/CQH/data/胎儿脊柱/4dv')
+    scan_4dv('/path/to/4dv')

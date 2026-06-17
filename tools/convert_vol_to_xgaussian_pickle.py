@@ -350,7 +350,7 @@ def validate_pickle_schema(ref_pickle: str, new_pickle: str, logger: logging.Log
                 logger.error("Key %s ndim mismatch: ref=%d new=%d", key, ra.ndim, na.ndim)
                 ok = False
             if ra.dtype != na.dtype:
-                logger.warning("Key %s dtype mismatch: ref=%s new=%s (建议保持 float32)", key, ra.dtype, na.dtype)
+                logger.warning("Key %s dtype mismatch: ref=%s new=%s (float32 is recommended)", key, ra.dtype, na.dtype)
 
     for split in ["train", "val"]:
         if split in ref and split in new:

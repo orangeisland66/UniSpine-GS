@@ -8,7 +8,7 @@ def count_gaussians(ply_path):
     return plydata.elements[0].count
 
 def main():
-    # 查找任意一个训练好的模型结果
+    # Point this to any trained model result.
     ply_path = '/data1/sunchao/CQH/UniSpine-GS_new_all_ct_v2/output/chest/2026_02_09_16_55_01/point_cloud/iteration_20000/point_cloud.ply'
     
     if not os.path.exists(ply_path):
@@ -17,7 +17,7 @@ def main():
 
     n_gaussians = count_gaussians(ply_path)
     
-    # 每个Gaussian包含的属性参数量
+    # Number of attributes per Gaussian.
     # xyz: 3
     # features_dc: 3 (1*3)
     # features_rest: 45 (15*3, max_sh_degree=3)

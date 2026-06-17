@@ -31,14 +31,14 @@ opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-# 绘制散点图
+# Draw the scatter plot.
 points = xyz
 ax.scatter(points[:, 0], points[:, 1], points[:, 2], s=1, alpha=min_max_norm(opacities), color='gray')
 
-# 取消三维网格坐标系
+# Hide the 3D axes.
 ax.axis('off')
 
-# 上下翻转三维图像
+# Flip the 3D view vertically.
 ax.invert_zaxis()
 
 elevation = 0
@@ -68,7 +68,7 @@ img = Image.open(image_files[0])
 
 gif_frames = [img.crop(box)]
 
-# 逐一添加图像帧
+# Add image frames one by one.
 for filename in tqdm(image_files[1:]):
     img = Image.open(filename)
     gif_frames.append(img.crop(box))

@@ -88,18 +88,18 @@ def write_csv(rows, output_csv: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="将批量评估文本转换为 CSV（含 average 行）")
+    parser = argparse.ArgumentParser(description="Convert batch evaluation text to CSV, including an average row.")
     parser.add_argument(
         "--input",
         type=str,
         default="",
-        help="输入文本文件路径；不传则从标准输入读取",
+        help="Input text file path. If omitted, read from standard input.",
     )
     parser.add_argument(
         "--output",
         type=str,
         default="output/metrics_from_text.csv",
-        help="输出 CSV 路径",
+        help="Output CSV path.",
     )
     args = parser.parse_args()
 
@@ -107,16 +107,16 @@ def main():
         text = Path(args.input).read_text(encoding="utf-8", errors="ignore")
     else:
         if sys.stdin.isatty():
-            print("请粘贴多行指标，结束后按 Ctrl-D:")
+            print("Paste metric lines, then press Ctrl-D:")
         text = sys.stdin.read()
 
     rows = parse_metrics_text(text)
     if not rows:
-        raise SystemExit("未解析到任何有效指标行，请检查输入格式。")
+        raise SystemExit("No valid metric lines were parsed. Please check the input format.")
 
     output_csv = Path(args.output).resolve()
     write_csv(rows, output_csv)
-    print(f"已生成 CSV: {output_csv}")
+    print(f"CSV written to: {output_csv}")
 
 
 if __name__ == "__main__":
