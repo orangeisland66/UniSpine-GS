@@ -1,245 +1,260 @@
-&nbsp;
+# UniSpine-GS
 
-<div align="center">
+This repository contains the code for **UniSpine-GS: An Efficient Physics-Aware
+Gaussian Framework for Cross-Modality Multi-view Spine Image Synthesis**.  The
+codebase is developed from [X-Gaussian](https://github.com/caiyuanhao1998/X-Gaussian)
+and currently keeps the X-ray/CT projection rendering pipeline used by
+[SAX-NeRF](https://github.com/caiyuanhao1998/SAX-NeRF).
 
-<p align="center"> <img src="3d_demo/logo.png" width="110px"> </p>
+This README currently documents only the **CT dataset training pipeline**.  The
+CT data are prepared from [CTSpine1K](https://github.com/MIRACLE-Center/CTSpine1K)
+NIfTI files (`.nii.gz`), converted to X-Gaussian-compatible pickle files, and
+then trained with UniSpine-GS.
 
-[![arXiv](https://img.shields.io/badge/paper-arxiv-179bd3)](https://arxiv.org/abs/2403.04116)
-[![zhihu](https://img.shields.io/badge/知乎-解读-179bd3)](https://zhuanlan.zhihu.com/p/717744222)
-[![Youtube](https://img.shields.io/badge/video-youtube-red)](https://www.youtube.com/watch?v=v6FESb3SkJg&t=28s)
-[![AK](https://img.shields.io/badge/media-AK-green)](https://x.com/_akhaliq/status/1765929288044290253?s=46)
-[![MrNeRF](https://img.shields.io/badge/media-MrNeRF-green)](https://x.com/janusch_patas/status/1766446189749150126?s=46)
-[![RF](https://img.shields.io/badge/media-Radiance_Fields-green)](https://radiancefields.com/x-gaussian-radiance-meets-radiation)
+## 1. Pipeline Overview
 
-<h2> Radiative Gaussian Splatting for Efficient X-ray Novel View Synthesis </h2> 
+```text
+CTSpine1K .nii.gz
+  -> tools/transform_nii_gz.sh
+  -> UniSpine-GS data/<case_id>.pickle
+  -> tools/generate_data_yaml_configs.py
+  -> config/<case_id>.yaml
+  -> train.py or batch_train_eval.py
+  -> output/<case_id>/point_cloud/iteration_*/point_cloud.ply
+  -> render.py
+  -> output/<case_id>/{train,test}/ours_*/renders/*.png
+```
 
+The converted pickle stores the CT volume, cone-beam geometry, training
+projections, validation projections, and their scanning angles.  During training,
+`scene/dataset_readers.py` reads the pickle, builds circular cone-beam camera
+poses from `DSO` and each projection angle, and initializes the Gaussian point
+cloud by uniformly sampling the CT voxel grid with `interval` spacing.
 
-<img src="3d_demo/teapot.gif" style="height:200px" /> 
+With `--eval`, `train.projections` are used for optimization and
+`val.projections` are kept as held-out test views.  Without `--eval`, validation
+views are merged into the training cameras and no test metric is reported.
 
-<img src="3d_demo/foot.gif" style="height:160px" /> 
+## 2. Environment
 
-<img src="3d_demo/bonsai.gif" style="height:200px" /> 
+Create the UniSpine-GS training environment from the project root:
 
-Point Cloud Visualization
-
-&nbsp;
-
-<img src="3d_demo/training_process.gif" style="height:200px" /> 
-
-Training Process Visualization
-
-</div>
-
-
-&nbsp;
-
-
-### Introduction
-This is the official implementation of our ECCV 2024 paper "Radiative Gaussian Splatting for Efficient X-ray Novel View Synthesis". Our X-Gaussian is SfM-free. If you find this repo useful, please give it a star ⭐ and consider citing our paper. Thank you.
-
-
-### News
-- **2025.06.25 :** Our new work [X2-Gaussian](https://arxiv.org/abs/2503.21779) for dynamic human chest breathing CT reconstruction has been accepted by ICCV 2025. Congrats to [Weihao](https://yuyouxixi.github.io/). Code and models will be released at [this repo](https://github.com/yuyouxixi/x2-gaussian).  🚀
-- **2024.09.25 :** Our new work [R2-Gaussian](https://arxiv.org/abs/2405.20693v1) has been accepted by NeurIPS 2024. Congrats to [Ruyi](https://ruyi-zha.github.io/). Code and model are  released at [this repo](https://github.com/Ruyi-Zha/r2_gaussian). 💫 
-- **2024.09.01 :** Code, models, and training logs have been released. Welcome to have a try 😆
-- **2024.07.01 :** Our X-Gaussian has been accepted by ECCV 2024! Code will be released before the start date of the conference (2024.09.29). Stay tuned. 🚀
-- **2024.06.03 :** Code for traditional methods has been released at [SAX-NeRF](https://github.com/caiyuanhao1998/SAX-NeRF). ✨
-- **2024.06.03 :** Code for fancy visualization and data generation has been released at [SAX-NeRF](https://github.com/caiyuanhao1998/SAX-NeRF). 🚀
-- **2024.06.03 :** Data, code, models, and training logs of our CVPR 2024 work [SAX-NeRF](https://github.com/caiyuanhao1998/SAX-NeRF) have been released. Feel free to use them :)
-- **2024.06.03 :** The datasets have been released on [Google Drive](https://drive.google.com/drive/folders/1SlneuSGkhk0nvwPjxxnpBCO59XhjGGJX?usp=sharing). Feel free to use them. 🚀
-- **2024.03.07 :** Our paper is on [arxiv](https://arxiv.org/abs/2403.04116) now. Code, models, and training logs will be released. Stay tuned. 💫
-
-### Performance
-
-<details close>
-<summary><b>Novel View Synthesis</b></summary>
-
-![results1](/fig/nvs_1.png)
-
-![results2](/fig/nvs_2.png)
-
-</details>
-
-
-<details close>
-<summary><b>CT Reconstruction</b></summary>
-
-![results3](/fig/ct_1.png)
-
-![results4](/fig/ct_2.png)
-
-</details>
-
-### Coordinate System
-
-The coordinate system in circular cone-beam X-ray scanning follows the OpenCV standards. The transformation between the camera, world, and image coordinate systems is shown below.
-<div align="center">
-<p align="center"> <img src="fig/coordinate_system.png" width="800px"> </p>
-</div>
-
-&nbsp;
-
-## 1. Create Environment:
-
-We recommend using [Conda](https://docs.conda.io/en/latest/miniconda.html) to set up the environment.
-
-``` sh
-# cloning our repo
-git clone https://github.com/caiyuanhao1998/X-Gaussian --recursive
-
-
-SET DISTUTILS_USE_SDK=1 # Windows only
-
-# install the official environment of 3DGS
-cd X-Gaussian
+```bash
+git clone https://github.com/orangeisland66/UniSpine-GS.git
+cd UniSpine-GS
 conda env create --file environment.yml
-conda activate x_gaussian
+conda activate unispine_gs
 
-# Use our X-ray rasterizer package to replace the original RGB rasterizer
-rm -rf submodules/diff-gaussian-rasterization/cuda_rasterizer
-mv cuda_rasterizer submodules/diff-gaussian-rasterization/
-
-# re-install the diff-gaussian-rasterization package
 pip install submodules/diff-gaussian-rasterization
+pip install submodules/simple-knn
 ```
 
-&nbsp;
+The local training helper `train.sh` assumes this environment has already been
+activated and uses the `python` executable from the current shell.
 
+The NIfTI-to-pickle conversion script is included in this repository under
+`tools/`.  It uses the SAX-NeRF data generation convention and requires TIGRE,
+nibabel, scipy, PyYAML, and imageio:
 
-## 2. Prepare Dataset
-Download our processed datasets from [Google drive](https://drive.google.com/drive/folders/1W46wpeN7byWLC0f3cGIvoT_xbwT1b7gZ?usp=sharing) or [Baidu disk](https://pan.baidu.com/s/1WrYhxFb8Y-RwS4PCx_LRhA?pwd=cyh2). Then put the downloaded datasets into the folder `data/` as
-
-```sh
-  |--data
-      # The first five datasets are used in our paper
-      |--chest_50.pickle
-      |--abdomen_50.pickle
-      |--foot_50.pickle
-      |--head_50.pickle
-      |--pancreas_50.pickle
-      # The rest datasets are from the X3D benchmark
-      |--aneurism_50.pickle
-      |--backpack_50.pickle
-      |--bonsai_50.pickle
-      |--box_50.pickle
-      |--carp_50.pickle
-      |--engine_50.pickle
-      |--leg_50.pickle
-      |--pelvis_50.pickle
-      |--teapot_50.pickle
-      |--jaw_50.pickle
+```bash
+pip install nibabel scipy PyYAML imageio
 ```
 
-`Note:` The first five datasets are used to do experiments in our paper. The rest datasets are from [the X3D benchmark](https://github.com/caiyuanhao1998/SAX-NeRF/). Please also note that the pickle data used by X-Gaussian is dumped/read by pickle protocol 4, which is supported by python < 3.8. The original X3D data is processed by pickle protocol 5, which is supported by python >= 3.8. I have re-dumped the pickle data from the original X3D datasets to make sure you can run our code without extra effort. If you want to re-dump the pickle data, please run
+Install TIGRE separately and verify that it is importable:
 
-```shell
-python pickle_redump.py
+```bash
+python -c "import tigre; print('TIGRE OK')"
 ```
 
+## 3. Prepare CTSpine1K Data
 
-&nbsp;
+Download CTSpine1K cases from:
 
-## 3. Training and Testing
+```text
+https://github.com/MIRACLE-Center/CTSpine1K
+```
 
-You can download our trained Gaussian point clouds from [Google Drive](https://drive.google.com/drive/folders/1-JqRXiwl1zjVKuBRL3F01cWHcyAe8f2F?usp=sharing) or [Baidu Disk](https://pan.baidu.com/s/1GWE5By6u03n2l6nnFhOE0g?pwd=cyh2) (code: `cyh2`) as
+The original case files are NIfTI volumes such as:
 
-![pc_shape](/fig/point_cloud_shape.png)
+```text
+<ctspine1k_root>/<case_id>.nii.gz
+```
 
-We share the training log for your convienience to debug. Please download them from [Google Drive](https://drive.google.com/drive/folders/1HKcy-luYLXTSH7vviu_djVtpbSdz_v6J?usp=sharing) or [Baidu Disk](https://pan.baidu.com/s/1amk0tnpH3hN9I-Qgjb_cEQ?pwd=cyh2) (code: `cyh2`). To make the training and evaluation easier, your can directly run the `train.sh` file by
+Convert each case to the pickle format expected by UniSpine-GS with the
+in-repository converter:
 
-```shell
+```bash
+bash tools/transform_nii_gz.sh \
+  /abs/path/to/<case_id>.nii.gz \
+  data/<case_id>.pickle
+```
+
+Example:
+
+```bash
+bash tools/transform_nii_gz.sh \
+  /abs/path/to/HN_P001.nii.gz \
+  data/HN_P001.pickle \
+  --vis_dir data/vis/HN_P001
+```
+
+The current `transform_nii_gz.sh` calls
+`tools/convert_nii_gz_to_xgaussian_pickle.py`, which:
+
+- loads the `.nii.gz` volume with nibabel;
+- converts HU values to attenuation when `convert: True`;
+- resizes the volume according to `tools/configs/ctspine1k_spine.yaml`;
+- simulates cone-beam DRR projections with TIGRE;
+- writes train and validation projections into one pickle file using pickle
+  protocol 4.
+
+By default, `tools/configs/ctspine1k_spine.yaml` generates `50` training
+views and `50` validation views over a `180` degree trajectory.  Validation
+views are placed at the midpoints between adjacent training views.
+
+After conversion, keep CT pickle files directly under `UniSpine-GS/data/`:
+
+```text
+UniSpine-GS/
+  data/
+    case_001.pickle
+    case_002.pickle
+    case_003.pickle
+```
+
+The config generator and `batch_train_eval.py` scan only `data/*.pickle` at the
+first directory level.  Files under subdirectories such as `data/ultrasound/`
+are ignored.
+
+## 4. CT Training Config
+
+Each CT pickle should have a matching YAML config under `config/`.  Generate
+configs from all pickle files directly under `data/` with:
+
+```bash
+python tools/generate_data_yaml_configs.py
+```
+
+The script writes `config/<case_id>.yaml` for each `data/<case_id>.pickle`.
+The `scene` name is taken from the pickle filename, and `source_path` points to
+the converted pickle. Existing YAML files are skipped by default; use
+`--overwrite` to regenerate them from the template:
+
+```bash
+python tools/generate_data_yaml_configs.py --overwrite
+```
+
+## 5. Train One CT Case
+
+Run one case from the UniSpine-GS root:
+
+```bash
+python train.py \
+  --config config/<case_id>.yaml \
+  --eval \
+  --model_path output/<case_id> \
+  --gpu_id 0
+```
+
+Example:
+
+```bash
+python train.py \
+  --config config/case_001.yaml \
+  --eval \
+  --model_path output/case_001 \
+  --gpu_id 0
+```
+
+Training evaluates held-out validation views at the default iterations
+`100`, `2000`, and `20000`.  The final point cloud is saved at:
+
+```text
+output/<case_id>/point_cloud/iteration_20000/point_cloud.ply
+```
+
+Training logs and metrics are written to:
+
+```text
+output/<case_id>/log.txt
+output/<case_id>/cfg_args
+output/<case_id>/cameras.json
+output/<case_id>/input.ply
+```
+
+The log reports the CT test-view SSIM, PSNR, rendering speed, and final Gaussian
+point count.
+
+## 6. Batch Train and Evaluate CT Cases
+
+
+Train every pickle in `data/` sequentially:
+
+```bash
+python batch_train_eval.py \
+  --project_root . \
+  --data_dir data \
+  --config_dir config \
+  --output_dir output \
+  --gpu_id 0
+```
+
+If the conda environment is already active, you can use the helper script:
+
+```bash
 bash train.sh
 ```
 
-Or you can separately train on each scene like
+`train.sh` changes into the repository root, uses the current environment's
+Python interpreter, and runs `batch_train_eval.py` over top-level
+`data/*.pickle` files.
 
-```shell
+Batch behavior:
 
-python3 train.py --config config/chest.yaml --eval
+- scans `data/*.pickle`;
+- uses `config/<case_id>.yaml` generated by `tools/generate_data_yaml_configs.py`;
+- falls back to a minimal config with only `scene`, `source_path`, and
+  `iterations: 20000` if no config exists;
+- trains with `python train.py --config ... --eval --model_path output/<case_id>`;
+- removes an existing `output/<case_id>` directory before retraining that case;
+- parses each `log.txt` and writes summary metrics.
 
-python3 train.py --config config/foot.yaml --eval
+Batch summaries are saved to:
 
-python3 train.py --config config/abdomen.yaml --eval
-
-python3 train.py --config config/head.yaml --eval
-
-python3 train.py --config config/pancreas.yaml --eval
-
-python3 train.py --config config/jaw.yaml --eval
-
-python3 train.py --config config/pelvis.yaml --eval
-
-python3 train.py --config config/aneurism.yaml --eval
-
-python3 train.py --config config/carp.yaml --eval
-
-python3 train.py --config config/bonsai.yaml --eval
-
-python3 train.py --config config/box.yaml --eval
-
-python3 train.py --config config/backpack.yaml --eval
-
-python3 train.py --config config/engine.yaml --eval
-
-python3 train.py --config config/leg.yaml --eval
-
-python3 train.py --config config/teapot.yaml --eval
-
+```text
+output/batch_eval_summary.json
+output/batch_eval_summary.txt
+output/batch_eval_summary.csv
 ```
 
-&nbsp;
+Avoid running multiple CT trainings in parallel with the same `data/` directory:
+the scene loader regenerates `data/points3d.ply` during initialization.
+Sequential single-case or batch training is safe.
 
+## 7. Render Trained CT Views
 
-## 4. Visualization
+After training, render the trained Gaussian model with:
 
-We also provide code for the visualization of rotating the Gaussian point clouds
-
-```shell
-
-python point_cloud_vis.py
-
+```bash
+python render.py \
+  --model_path output/<case_id> \
+  --iteration -1 \
+  --skip_train
 ```
 
-&nbsp;
+`--iteration -1` loads the latest saved point cloud.  `--skip_train` renders
+only the held-out test views.  Outputs are written to:
 
-## 5. Citation
-```sh
-# X-Gaussian
-@inproceedings{x_gaussian,
-  title={Radiative gaussian splatting for efficient x-ray novel view synthesis},
-  author={Yuanhao Cai and Yixun Liang and Jiahao Wang and Angtian Wang and Yulun Zhang and Xiaokang Yang and Zongwei Zhou and Alan Yuille},
-  booktitle={ECCV},
-  year={2024}
-}
-
-# sax-nerf
-@inproceedings{sax_nerf,
-  title={Structure-Aware Sparse-View X-ray 3D Reconstruction},
-  author={Yuanhao Cai and Jiahao Wang and Alan Yuille and Zongwei Zhou and Angtian Wang},
-  booktitle={CVPR},
-  year={2024}
-}
-
-# R2-Gaussian
-@inproceedings{r2_gaussian,
-  title={R2-Gaussian: Rectifying Radiative Gaussian Splatting for Tomographic Reconstruction},
-  author={Ruyi Zha and Tao Jun Lin and Yuanhao Cai and Jiwen Cao and Yanhao Zhang and Hongdong Li},
-  booktitle={NeurIPS},
-  year={2024}
-}
-
-# X2-Gaussian
-@inproceedings{x2_gaussian,
-  title={X2-Gaussian: 4D Radiative Gaussian Splatting for Continuous-time Tomographic Reconstruction},
-  author={Yu, Weihao and Cai, Yuanhao and Zha, Ruyi and Fan, Zhiwen and Li, Chenxin and Yuan, Yixuan},
-  booktitle={ICCV},
-  year={2025}
-}
+```text
+output/<case_id>/test/ours_<iteration>/renders/
+output/<case_id>/test/ours_<iteration>/gt/
 ```
 
-&nbsp;
+To render both training and test views, omit `--skip_train`.
 
 
-## Acknowledgement
+## Acknowledgements
 
-Our code and data are heavily borrowed from [SAX-NeRF](https://github.com/caiyuanhao1998/SAX-NeRF/) and [3DGS](https://github.com/graphdeco-inria/gaussian-splatting)
+This codebase builds on X-Gaussian, SAX-NeRF, 3D Gaussian Splatting, and the
+CTSpine1K dataset.  Please follow the licenses and usage requirements of the
+original projects and dataset when using this repository.

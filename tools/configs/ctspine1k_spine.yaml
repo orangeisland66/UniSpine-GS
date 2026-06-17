@@ -1,0 +1,48 @@
+# Default cone-beam CT projection geometry for CTSpine1K conversion.
+# Units follow the SAX-NeRF data generator: distances are stored in millimeters
+# here and converted to meters when passed to TIGRE.
+
+numTrain: 50
+numVal: 50
+
+DSD: 1500.0
+DSO: 1000.0
+
+nDetector:
+  - 1024
+  - 1024
+dDetector:
+  - 1.0
+  - 1.0
+
+nVoxel:
+  - 512
+  - 512
+  - 174
+dVoxel:
+  - 0.8398
+  - 0.8398
+  - 3.2
+
+offOrigin:
+  - 0
+  - 0
+  - 0
+offDetector:
+  - 0
+  - 0
+
+accuracy: 0.5
+mode: cone
+filter: null
+
+totalAngle: 180.0
+startAngle: 0.0
+randomAngle: False
+
+convert: True
+rescale_slope: 1.0
+rescale_intercept: 0.0
+normalize: True
+
+noise: 0

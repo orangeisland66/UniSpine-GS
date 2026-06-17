@@ -1,4 +1,4 @@
-name: x_gaussian
+name: unispine_gs
 channels:
   - pytorch
   - conda-forge
@@ -14,7 +14,9 @@ dependencies:
   - tqdm
   - imageio
   - pyyaml
+  - scipy
   - pip:
     - submodules/diff-gaussian-rasterization
     - submodules/simple-knn
     - opencv-python
+    - nibabel<5
