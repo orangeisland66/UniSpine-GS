@@ -1,0 +1,78 @@
+# fespine3d_spine.yaml  (for convert_vol_to_pickle.py, Ax line-integral)
+
+# dataset
+numTrain: 50
+numVal: 50
+
+# System configuration (mm)
+DSD: 1500.0
+DSO: 1000.0
+
+# Detector parameters
+# NOTE: With Ax mode, projection output shape is (N, nDetector[1], nDetector[0])
+nDetector:
+  - 1024
+  - 1024
+dDetector:   # mm
+  - 1.0
+  - 1.0
+
+# Image parameters (X, Y, Z)
+# convert_vol_to_pickle.py will resize the parsed vol to this shape by default
+nVoxel:
+  - 512
+  - 512
+  - 174
+dVoxel:      # mm
+  - 0.8398
+  - 0.8398
+  - 3.2
+
+# Offsets (mm)
+offOrigin:
+  - 0
+  - 0
+  - 0
+offDetector:
+  - 0
+  - 0
+
+# TIGRE
+accuracy: 0.5
+mode: cone
+filter: null
+
+# Angles
+totalAngle: 180.0
+startAngle: 0.0
+randomAngle: false
+
+# Preprocessing flags kept for schema compatibility
+convert: false
+rescale_slope: 1.0
+rescale_intercept: 0.0
+normalize: true
+noise: 0
+
+# Extra settings used by convert_vol_to_pickle.py
+projection:
+  # Scale applied after volume normalization to [0, 1]:
+  # mu = normalized_volume * us_mu_scale
+  us_mu_scale: 1.0
+
+  # Reorder volume axes before Ax.
+  # Input volume is (X, Y, Z). After reorder, it is interpreted as new (X, Y, Z)
+  # and passed to Ax as (Z, Y, X).
+  volume_axis_order: [2, 1, 0]
+
+  # Flip on the reordered axes (X, Y, Z) after volume_axis_order.
+  flip_xyz: [false, false, false]
+
+  # angles_used = angle_sign * angles + deg2rad(angle_offset_deg)
+  angle_offset_deg: 0.0
+  angle_sign: 1.0
+
+  # Preview-only orientation tweaks. These do not change training data.
+  post_rot90_k: -1
+  post_flip_ud: false
+  post_flip_lr: false

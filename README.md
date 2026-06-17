@@ -3,20 +3,19 @@
 This repository contains the code for **UniSpine-GS: An Efficient Physics-Aware
 Gaussian Framework for Cross-Modality Multi-view Spine Image Synthesis**.  The
 codebase is developed from [X-Gaussian](https://github.com/caiyuanhao1998/X-Gaussian)
-and currently keeps the X-ray/CT projection rendering pipeline used by
+and keeps the projection rendering pipeline used by
 [SAX-NeRF](https://github.com/caiyuanhao1998/SAX-NeRF).
 
-This README currently documents only the **CT dataset training pipeline**.  The
-CT data are prepared from [CTSpine1K](https://github.com/MIRACLE-Center/CTSpine1K)
-NIfTI files (`.nii.gz`), converted to X-Gaussian-compatible pickle files, and
-then trained with UniSpine-GS.
+Volume data are first converted to the UniSpine-GS pickle format and then
+trained with the same UniSpine-GS commands.  The repository provides converters
+for CT NIfTI files (`.nii.gz`) and ultrasound KRETZ volume files (`.vol`).
 
 ## 1. Pipeline Overview
 
 ```text
-CTSpine1K .nii.gz
-  -> tools/transform_nii_gz.sh
-  -> UniSpine-GS data/<case_id>.pickle
+CT .nii.gz or ultrasound .vol
+  -> tools/transform_nii_gz.sh or tools/transform_vol.sh
+  -> data/<case_id>.pickle
   -> tools/generate_data_yaml_configs.py
   -> config/<case_id>.yaml
   -> train.py or batch_train_eval.py
@@ -25,11 +24,11 @@ CTSpine1K .nii.gz
   -> output/<case_id>/{train,test}/ours_*/renders/*.png
 ```
 
-The converted pickle stores the CT volume, cone-beam geometry, training
+The converted pickle stores the input volume, cone-beam geometry, training
 projections, validation projections, and their scanning angles.  During training,
 `scene/dataset_readers.py` reads the pickle, builds circular cone-beam camera
 poses from `DSO` and each projection angle, and initializes the Gaussian point
-cloud by uniformly sampling the CT voxel grid with `interval` spacing.
+cloud by uniformly sampling the voxel grid with `interval` spacing.
 
 With `--eval`, `train.projections` are used for optimization and
 `val.projections` are kept as held-out test views.  Without `--eval`, validation
@@ -71,7 +70,7 @@ CUDA version, reactivate the conda environment or place `$CONDA_PREFIX/bin`
 before the system CUDA path in `PATH`.
 
 TIGRE source is vendored in `third_party/TIGRE-2.3` under the BSD 3-Clause
-license.  Build it from the repository copy before running the CT conversion
+license.  Build it from the repository copy before running the conversion
 scripts:
 
 ```bash
@@ -96,7 +95,9 @@ These extensions are installed after `conda env create` because their setup
 scripts import PyTorch during compilation.
 
 
-## 3. Prepare CTSpine1K Data
+## 3. Prepare Volume Data
+
+### CT NIfTI Data
 
 Download CTSpine1K cases from:
 
@@ -119,46 +120,32 @@ bash tools/transform_nii_gz.sh \
   data/<case_id>.pickle
 ```
 
-Example:
+### Ultrasound VOL Data
+
+Ultrasound KRETZ `.vol` files can be converted with:
 
 ```bash
-bash tools/transform_nii_gz.sh \
-  /abs/path/to/HN_P001.nii.gz \
-  data/HN_P001.pickle \
-  --vis_dir data/vis/HN_P001
+bash tools/transform_vol.sh \
+  /abs/path/to/<case_id>.vol \
+  data/<case_id>.pickle
 ```
 
-The current `transform_nii_gz.sh` calls
-`tools/convert_nii_gz_to_xgaussian_pickle.py`, which:
+After conversion, keep pickle files directly under `UniSpine-GS/data/`:
 
-- loads the `.nii.gz` volume with nibabel;
-- converts HU values to attenuation when `convert: True`;
-- resizes the volume according to `tools/configs/ctspine1k_spine.yaml`;
-- simulates cone-beam DRR projections with TIGRE;
-- writes train and validation projections into one pickle file using pickle
-  protocol 4.
-
-By default, `tools/configs/ctspine1k_spine.yaml` generates `50` training
-views and `50` validation views over a `180` degree trajectory.  Validation
-views are placed at the midpoints between adjacent training views.
-
-After conversion, keep CT pickle files directly under `UniSpine-GS/data/`:
-
-```text
-UniSpine-GS/
-  data/
-    case_001.pickle
-    case_002.pickle
-    case_003.pickle
+```sh
+  |--data
+      |--case_001.pickle
+      |--case_002.pickle
+      |--case_003.pickle
+      ...
 ```
 
 The config generator and `batch_train_eval.py` scan only `data/*.pickle` at the
-first directory level.  Files under subdirectories such as `data/ultrasound/`
-are ignored.
+first directory level.  Files under subdirectories are ignored.
 
-## 4. CT Training Config
+## 4. Training Config
 
-Each CT pickle should have a matching YAML config under `config/`.  Generate
+Each pickle should have a matching YAML config under `config/`.  Generate
 configs from all pickle files directly under `data/` with:
 
 ```bash
@@ -174,7 +161,7 @@ the converted pickle. Existing YAML files are skipped by default; use
 python tools/generate_data_yaml_configs.py --overwrite
 ```
 
-## 5. Train One CT Case
+## 5. Train One Case
 
 Run one case from the UniSpine-GS root:
 
@@ -212,10 +199,10 @@ output/<case_id>/cameras.json
 output/<case_id>/input.ply
 ```
 
-The log reports the CT test-view SSIM, PSNR, rendering speed, and final Gaussian
+The log reports the test-view SSIM, PSNR, rendering speed, and final Gaussian
 point count.
 
-## 6. Batch Train and Evaluate CT Cases
+## 6. Batch Train and Evaluate Cases
 
 
 Train every pickle in `data/` sequentially:
@@ -229,39 +216,14 @@ python batch_train_eval.py \
   --gpu_id 0
 ```
 
-If the conda environment is already active, you can use the helper script:
+You can also use the helper script:
 
 ```bash
 bash train.sh
 ```
 
-`train.sh` changes into the repository root, uses the current environment's
-Python interpreter, and runs `batch_train_eval.py` over top-level
-`data/*.pickle` files.
 
-Batch behavior:
-
-- scans `data/*.pickle`;
-- uses `config/<case_id>.yaml` generated by `tools/generate_data_yaml_configs.py`;
-- falls back to a minimal config with only `scene`, `source_path`, and
-  `iterations: 20000` if no config exists;
-- trains with `python train.py --config ... --eval --model_path output/<case_id>`;
-- removes an existing `output/<case_id>` directory before retraining that case;
-- parses each `log.txt` and writes summary metrics.
-
-Batch summaries are saved to:
-
-```text
-output/batch_eval_summary.json
-output/batch_eval_summary.txt
-output/batch_eval_summary.csv
-```
-
-Avoid running multiple CT trainings in parallel with the same `data/` directory:
-the scene loader regenerates `data/points3d.ply` during initialization.
-Sequential single-case or batch training is safe.
-
-## 7. Render Trained CT Views
+## 7. Render Trained Views
 
 After training, render the trained Gaussian model with:
 

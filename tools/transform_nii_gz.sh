@@ -20,7 +20,7 @@ fi
 
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
-"${PYTHON_BIN}" "${SCRIPT_DIR}/convert_nii_gz_to_xgaussian_pickle.py" \
+"${PYTHON_BIN}" "${SCRIPT_DIR}/convert_nii_gz_to_pickle.py" \
     --input_nii_gz "${INPUT_PATH}" \
     --output_pickle "${OUTPUT_PATH}" \
     --config "${CONFIG_PATH}" \
