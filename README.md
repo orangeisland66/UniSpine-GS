@@ -244,6 +244,11 @@ output/<case_id>/test/ours_<iteration>/gt/
 
 To render both training and test views, omit `--skip_train`.
 
+## 8. Citation
+
+If you use this codebase in your research, please cite the following paper:
+
+
 
 ## Acknowledgements
 
