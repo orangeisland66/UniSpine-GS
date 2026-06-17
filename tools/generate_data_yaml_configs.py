@@ -17,12 +17,23 @@ scaling_lr: 0.005
 rotation_lr: 0.001
 percent_dense: 0.01
 lambda_dssim: 0.2
+use_attention: True
+attn_alpha: 0.8
+attn_hf_lambda: 0.5
+attn_blur_kernel: 3
+attn_blur_sigma: 1.5
+attn_warmup_start: 2000
+attn_warmup_iters: 5000
+attn_gate_thresh: 0.4
+attn_adaptive_gate: True
+attn_gate_quantile: 0.85
+mask_vis_interval: 0
 densification_interval: 200
 opacity_reset_interval: 4000
 radiodensity_reset_interval: 2000
 densify_from_iter: 500
 densify_until_iter: 8000
-densify_grad_threshold: 0.000026
+densify_grad_threshold: 0.00015
 random_background: False
 """
 

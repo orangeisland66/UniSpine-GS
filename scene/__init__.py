@@ -38,7 +38,7 @@ class Scene:
             print("Found transforms_train.json file, assuming Blender data set!")
             scene_info = sceneLoadTypeCallbacks["Blender"](args.source_path, args.white_background, args.eval)
         elif ".pickle" in args.source_path:
-            print("Loading pickle file for X-ray rendering")
+            print("Loading pickle file for rendering")
             scene_info, self.volume_positions, self.image_3d = sceneLoadTypeCallbacks["Xray"](path = args.source_path, eval = args.eval, interval = args.interval, add_num = args.add_num, train_num = args.train_num)
         else:
             assert False, "Could not recognize scene type!"
