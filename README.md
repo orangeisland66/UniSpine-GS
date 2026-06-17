@@ -44,23 +44,44 @@ git clone https://github.com/orangeisland66/UniSpine-GS.git
 cd UniSpine-GS
 conda env create --file environment.yml
 conda activate unispine_gs
+```
 
+Verify that PyTorch imports correctly before building the local CUDA extensions:
+
+```bash
+python -c "import torch; print(torch.__version__, torch.version.cuda)"
+```
+
+Then install the two in-repository extension modules:
+
+```bash
 pip install submodules/diff-gaussian-rasterization
 pip install submodules/simple-knn
+```
+
+These extensions are intentionally installed after `conda env create` rather
+than from the `pip:` section of `environment.yml`. Their setup scripts import
+PyTorch while building, so installing them after the environment is activated
+makes failures easier to diagnose and avoids creating a partially configured
+environment.
+
+If environment creation previously failed while installing these submodules,
+remove the incomplete environment and recreate it:
+
+```bash
+conda env remove -n unispine_gs
+conda env create --file environment.yml
+conda activate unispine_gs
 ```
 
 The local training helper `train.sh` assumes this environment has already been
 activated and uses the `python` executable from the current shell.
 
 The NIfTI-to-pickle conversion script is included in this repository under
-`tools/`.  It uses the SAX-NeRF data generation convention and requires TIGRE,
-nibabel, scipy, PyYAML, and imageio:
-
-```bash
-pip install nibabel scipy PyYAML imageio
-```
-
-Install TIGRE separately and verify that it is importable:
+`tools/`.  It uses the SAX-NeRF data generation convention.  The Python
+dependencies used by the converter (`nibabel`, `scipy`, `PyYAML`, and
+`imageio`) are included in `environment.yml`; install TIGRE separately and
+verify that it is importable:
 
 ```bash
 python -c "import tigre; print('TIGRE OK')"

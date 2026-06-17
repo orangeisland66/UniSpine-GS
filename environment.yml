@@ -5,6 +5,9 @@ channels:
   - defaults
 dependencies:
   - cudatoolkit=11.6
+  # PyTorch 1.12.x can fail to import with newer MKL releases:
+  # undefined symbol: iJIT_NotifyEvent
+  - mkl=2024.0.0
   - plyfile=0.8.1
   - python=3.7.13
   - pip=22.3.1
@@ -16,7 +19,5 @@ dependencies:
   - pyyaml
   - scipy
   - pip:
-    - submodules/diff-gaussian-rasterization
-    - submodules/simple-knn
     - opencv-python
     - nibabel<5
