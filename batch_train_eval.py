@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from statistics import mean
 
+from tools.generate_data_yaml_configs import CONFIG_TEMPLATE
+
 
 FLOAT_RE = re.compile(r"[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?")
 
@@ -73,11 +75,7 @@ def maybe_make_config(config_path: Path, scene_name: str, pickle_path: Path):
         return config_path
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_content = (
-        f"scene: {scene_name}\n"
-        f"source_path: {pickle_path.as_posix()}\n"
-        f"iterations: 20000\n"
-    )
+    config_content = CONFIG_TEMPLATE.format(scene=scene_name, source_path=pickle_path.as_posix())
     config_path.write_text(config_content, encoding="utf-8")
     print(f"[Info] 自动创建配置: {config_path}")
     return config_path

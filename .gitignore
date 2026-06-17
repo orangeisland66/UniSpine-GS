@@ -7,8 +7,8 @@ diff_rasterization/dist
 tensorboard_3d
 screenshots
 data
-config/logs
-config/cache
+config/*
+!config/example.yaml
 __pycache__/
 third_party/TIGRE-2.3/Python/*.so
 third_party/TIGRE-2.3/Python/build/
