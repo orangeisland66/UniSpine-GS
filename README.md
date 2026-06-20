@@ -125,7 +125,7 @@ You can also directly download .pickle files of CTSpine3D from [Baidu Disk](http
 
 Under the guidance of professional clinicians and following established clinical practice guidelines, we curated a formal dataset comprising 242 three-dimensional fetal spine ultrasound volumes from 102 patients, with the majority of the data acquired using GE Voluson E8/E10 ultrasound systems. All data were de-identified and anonymized prior to use. For each volume, multi-view projection images were generated using a GPU-accelerated differentiable DRR operator under known cone-beam geometry. Specifically, 100 projection views were generated for each volume, of which 50 views were used for training and the remaining 50 views were reserved for validation.
 
-The open-source release of the dataset is actively underway and is currently in the stage of data curation and publication preparation.
+The open-source release of the dataset is actively underway and is currently in the stage of data curation and publication preparation.You can view the preview images in [FeSpine_3D_preview](https://github.com/orangeisland66/UniSpine-GS/tree/master/FeSpine_3D_preview).
 
 However, you can currently train the model using your own ultrasound dataset in the .vol format. Ultrasound KRETZ `.vol` files can be converted with:
 
