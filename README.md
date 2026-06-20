@@ -119,7 +119,7 @@ bash tools/transform_nii_gz.sh \
   /abs/path/to/<case_id>.nii.gz \
   data/<case_id>.pickle
 ```
-You can also directly download .pickle files of CTSpine3D from [baidu disk](https://pan.baidu.com/s/1fCvqB8BjbxYjyLFoqWlx9w?pwd=g3ut) and put them in ./data folder.
+You can also directly download .pickle files of CTSpine3D from [Baidu Disk](https://pan.baidu.com/s/1fCvqB8BjbxYjyLFoqWlx9w?pwd=g3ut)(code: g3ut) and put them in ./data folder.
 
 ### Ultrasound VOL Data
 
