@@ -201,6 +201,8 @@ output/<case_id>/test/ours_<iteration>/gt/
 
 To render both training and test views, omit `--skip_train`.
 
+The experimental results reported in the paper, including SSIM, PSNR, training time, and inference time, are averaged over the results from the four .nii.gz datasets in the CTSpine3D_example folder. SSIM, PSNR, and training time are obtained during the training stage, while inference time is measured during the testing stage using render.py.
+
 ## 7. Citation
 
 If you use this codebase in your research, please cite the following paper:
