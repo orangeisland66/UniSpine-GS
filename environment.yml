@@ -1,4 +1,4 @@
-name: unispine_gs_test
+name: unispine_gs
 channels:
   - pytorch
   - nvidia
